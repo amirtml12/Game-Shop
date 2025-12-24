@@ -1,0 +1,27 @@
+@import "tailwindcss";
+@theme {
+  --color-steam-dark: #1b2838;
+  --color-steam-black: #171a21;
+  --color-steam-blue: #316282;
+  --color-steam-accent: #66c0f4;
+  --color-steam-green: #5c7e10;
+}
+@layer base {
+  /* تم پیش‌فرض (تاریک) */
+  :root {
+    --bg-main: #1b2838;
+    --bg-navbar: #171a21;
+    --text-color: #c7d5e0;
+    --bg-card: #00000033;
+  }
+
+  /* تم روشن */
+  :root.light {
+    --bg-main: #ebedef;
+    --bg-navbar: #ffffff;
+    --text-color: #1b2838;
+    --bg-card: #ffffff;
+  }
+}
+@source "../index.html";
+@source "./**/*.{js,ts,jsx,tsx}";
