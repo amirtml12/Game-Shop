@@ -1,29 +1,89 @@
 import React from "react";
+import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom"; // اضافه کردن useNavigate
 
-const GameDetails = ({ game, setView, addToCart }) => {
-  // اگر بازی انتخاب نشده باشد، چیزی نشان نده (یا لیست بازی‌ها را نشان بده)
+const GameDetails = ({
+  game,
+  setView,
+  addToCart,
+  featuredGames = [],
+  setSelectedGame,
+}) => {
+  const navigate = useNavigate();
+
+  // حالت ۱: اگر بازی انتخاب نشده باشد (صفحه اصلی)
   if (!game) {
     return (
-      <div className="text-center py-20 opacity-50">
-        <p>لطفاً یک بازی را از سایدبار انتخاب کنید یا ژانری را برگزینید.</p>
+      <div className="space-y-8">
+        <div className="flex items-center justify-between">
+          <h3 className="text-2xl font-bold bg-gradient-to-l from-blue-500 to-transparent pr-4 border-r-4 border-blue-600">
+            بازی‌های پیشنهادی برای شما
+          </h3>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+          {featuredGames.map((item) => (
+            <motion.div 
+              key={item.id}
+              onClick={() => {
+                setSelectedGame(item);
+                navigate(`/game/${item.id}`); // تغییر آدرس با کلیک
+              }}
+              whileHover={{ scale: 1.02, y: -5 }}
+              className="relative bg-[#1a1f29] p-4 rounded-2xl border border-white/5 cursor-pointer overflow-hidden group transition-all"
+            >
+              <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl blur opacity-0 group-hover:opacity-20 transition duration-500"></div>
+              
+              <div className="relative flex gap-5 items-center">
+                <img 
+                  src={item.image} 
+                  className="w-28 h-28 object-cover rounded-xl shadow-lg group-hover:rotate-2 transition-transform duration-300" 
+                  alt={item.title}
+                />
+                <div className="flex-1">
+                  <h4 className="font-bold text-white group-hover:text-blue-400 transition">{item.title}</h4>
+                  <p className="text-xs text-gray-500 mt-2 line-clamp-2 leading-relaxed">
+                    تجربه‌ای متفاوت در سبک {item.category} با گرافیک خیره‌کننده.
+                  </p>
+                  <div className="flex justify-between items-center mt-3">
+                    <span className="text-green-400 font-mono font-bold">{item.price}</span>
+                    <span className="text-[10px] bg-blue-500/10 text-blue-400 px-2 py-1 rounded">مشاهده جزئیات</span>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          ))}
+        </div>
       </div>
     );
   }
 
+  // حالت ۲: نمایش جزئیات بازی انتخاب شده
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
-      {/* بخش اصلی معرفی بازی */}
-      <div className="bg-[var(--bg-card)] p-6 rounded-2xl border border-white/5 flex flex-col md:flex-row gap-8">
+    <div className="space-y-8">
+      {/* دکمه بازگشت سریع */}
+      <button 
+        onClick={() => navigate("/")}
+        className="text-sm text-gray-400 hover:text-blue-400 transition-colors flex items-center gap-2"
+      >
+        ← بازگشت به لیست بازی‌ها
+      </button>
+
+      <div className="bg-[#1a1f29] p-6 rounded-2xl border border-white/5 flex flex-col md:flex-row gap-8">
         <img
           src={game.image}
           alt={game.title}
           className="w-full md:w-80 h-48 object-cover rounded-xl shadow-2xl"
         />
         <div className="flex-1 space-y-4">
-          <h2 className="text-3xl font-bold">{game.title}</h2>
+          <div className="flex justify-between items-start">
+            <h2 className="text-3xl font-bold">{game.title}</h2>
+            <span className="bg-blue-500/10 text-blue-400 text-xs px-3 py-1 rounded-full border border-blue-500/20">
+              {game.category}
+            </span>
+          </div>
           <p className="text-gray-400 leading-relaxed">{game.description}</p>
           <div className="flex flex-wrap items-center gap-4 pt-4">
-            {/* دکمه خرید */}
             <button
               onClick={() => addToCart(game)}
               className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-lg font-bold transition-all transform hover:scale-105"
@@ -31,7 +91,6 @@ const GameDetails = ({ game, setView, addToCart }) => {
               افزودن به سبد خرید
             </button>
 
-            {/* دکمه دانلود (که قبلاً حذف شده بود) */}
             <button
               onClick={() => setView("download")}
               className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-bold border border-white/10 transition-all"
@@ -46,64 +105,31 @@ const GameDetails = ({ game, setView, addToCart }) => {
         </div>
       </div>
 
-      {/* بخش سیستم مورد نیاز (Requirements) */}
+      {/* بخش مشخصات سیستم (تغییر نام فیلدها برای هماهنگی با پنل ادمین جدید) */}
       <div className="grid md:grid-cols-2 gap-6">
-        {/* حداقل سیستم */}
         <div className="bg-white/5 p-6 rounded-xl border border-white/5">
           <h3 className="text-blue-400 font-bold mb-4 flex items-center gap-2">
             <span className="w-2 h-2 bg-blue-400 rounded-full"></span>
             حداقل سیستم مورد نیاز
           </h3>
-          <ul className="space-y-2 text-sm text-gray-300">
-            <li>
-              <strong>OS:</strong>{" "}
-              {game.requirements?.minOS || "Windows 10 64-bit"}
-            </li>
-            <li>
-              <strong>Processor:</strong>{" "}
-              {game.requirements?.minCPU || "Intel Core i5-4460"}
-            </li>
-            <li>
-              <strong>Memory:</strong> {game.requirements?.minRAM || "8 GB RAM"}
-            </li>
-            <li>
-              <strong>Graphics:</strong>{" "}
-              {game.requirements?.minGPU || "NVIDIA GTX 760"}
-            </li>
-            <li>
-              <strong>Storage:</strong>{" "}
-              {game.requirements?.storage || "50 GB space"}
-            </li>
+          <ul className="space-y-3 text-sm text-gray-300">
+            <li><span className="text-gray-500">OS:</span> {game.requirements?.minOS || "Windows 10"}</li>
+            <li><span className="text-gray-500">Processor:</span> {game.requirements?.minCPU || "Intel Core i5"}</li>
+            <li><span className="text-gray-500">Memory:</span> {game.requirements?.minRAM || "8 GB"}</li>
+            <li><span className="text-gray-500">Graphics:</span> {game.requirements?.minGPU || "GTX 1050"}</li>
           </ul>
         </div>
 
-        {/* سیستم پیشنهادی */}
         <div className="bg-white/5 p-6 rounded-xl border border-white/5">
           <h3 className="text-purple-400 font-bold mb-4 flex items-center gap-2">
             <span className="w-2 h-2 bg-purple-400 rounded-full"></span>
             سیستم پیشنهادی
           </h3>
-          <ul className="space-y-2 text-sm text-gray-300">
-            <li>
-              <strong>OS:</strong>{" "}
-              {game.requirements?.recOS || "Windows 11 64-bit"}
-            </li>
-            <li>
-              <strong>Processor:</strong>{" "}
-              {game.requirements?.recCPU || "Intel Core i7-9700K"}
-            </li>
-            <li>
-              <strong>Memory:</strong>{" "}
-              {game.requirements?.recRAM || "16 GB RAM"}
-            </li>
-            <li>
-              <strong>Graphics:</strong>{" "}
-              {game.requirements?.recGPU || "NVIDIA RTX 2060"}
-            </li>
-            <li>
-              <strong>Storage:</strong>{" "}
-              {game.requirements?.storage || "50 GB SSD recommended"}
-            </li>
+          <ul className="space-y-3 text-sm text-gray-300">
+            <li><span className="text-gray-500">OS:</span> {game.requirements?.recOS || "Windows 11"}</li>
+            <li><span className="text-gray-500">Processor:</span> {game.requirements?.recCPU || "Intel Core i7"}</li>
+            <li><span className="text-gray-500">Memory:</span> {game.requirements?.recRAM || "16 GB"}</li>
+            <li><span className="text-gray-500">Graphics:</span> {game.requirements?.recGPU || "RTX 3060"}</li>
           </ul>
         </div>
       </div>

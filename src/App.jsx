@@ -1,9 +1,17 @@
 import React, { useState, useEffect } from "react";
-import { gamesData, categories } from "./data";
+import {
+  Routes,
+  Route,
+  useLocation,
+  useNavigate,
+  useParams,
+} from "react-router-dom";
+import { gamesData as initialGames } from "./data";
 import { useLocalStorage } from "./hooks/useLocalStorage";
-import { AnimatePresence } from "framer-motion"; // برای مدیریت خروج انیمیشن‌ها
+import { AnimatePresence } from "framer-motion";
 
 // ایمپورت کامپوننت‌ها
+import AdminPanel from "./Components/AdminPanel";
 import Navbar from "./Components/Navbar";
 import Sidebar from "./Components/Sidebar";
 import Slider from "./Components/Slider";
@@ -12,64 +20,87 @@ import DownloadPage from "./Components/DownloadPage";
 import AuthPage from "./Components/AuthPage";
 import CartPage from "./Components/CartPage";
 import PageTransition from "./Components/PageTransition";
+import Footer from "./Components/Footer";
+import AboutPage from "./Components/AboutPage";
+import SupportPage from "./Components/SupportPage";
+
+const categories = ["Action", "RPG", "Sports", "Strategy", "Adventure"];
+
+// --- کامپوننت کمکی برای استخراج ID از آدرس URL ---
+const GameRouteWrapper = ({ games, addToCart, setView, setSelectedGame }) => {
+  const { gameId } = useParams();
+  const game = games.find((g) => g.id === parseInt(gameId));
+
+  if (!game)
+    return (
+      <div className="text-white text-center py-20 font-bold">
+        بازی مورد نظر یافت نشد.
+      </div>
+    );
+
+  return (
+    <PageTransition key={game.id}>
+      <GameDetails
+        game={game}
+        setView={setView}
+        addToCart={addToCart}
+        featuredGames={games.slice(0, 4)}
+        setSelectedGame={setSelectedGame}
+      />
+    </PageTransition>
+  );
+};
 
 function App() {
-  // --- وضعیت‌های حافظه‌دار (Local Storage) ---
   const [darkMode, setDarkMode] = useLocalStorage("theme", true);
   const [cart, setCart] = useLocalStorage("shopping-cart", []);
 
-  // --- وضعیت‌های اصلی اپلیکیشن ---
+  const [games, setGames] = useLocalStorage("all-games", initialGames);
   const [view, setView] = useState("categories");
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [selectedGame, setSelectedGame] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
 
-  // --- مدیریت تم تیره و روشن ---
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const isAdmin = location.pathname === "/admin";
+  const isGamePage = location.pathname.startsWith("/game/");
+
   useEffect(() => {
-    if (!darkMode) {
-      document.documentElement.classList.add("light");
-    } else {
-      document.documentElement.classList.remove("light");
-    }
+    if (!darkMode) document.documentElement.classList.add("light");
+    else document.documentElement.classList.remove("light");
   }, [darkMode]);
 
-  // --- اسکرول به بالا هنگام تغییر صفحه یا بازی ---
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
-  }, [selectedGame, view]);
+  }, [location.pathname, view]);
 
-  // --- منطق افزودن به سبد خرید ---
   const addToCart = (game) => {
     const isExist = cart.find((item) => item.id === game.id);
-    if (!isExist) {
-      setCart([...cart, game]);
-    } else {
-      alert("این بازی از قبل در سبد خرید شما موجود است.");
-    }
+    if (!isExist) setCart([...cart, game]);
+    else alert("این بازی در سبد خرید موجود است.");
   };
 
-  // --- فیلتر کردن لیست بازی‌ها ---
-  const filteredGames = gamesData.filter((game) => {
-    if (searchTerm) {
+  const filteredGames = games.filter((game) => {
+    if (searchTerm)
       return game.title.toLowerCase().includes(searchTerm.toLowerCase());
-    }
     return game.category === selectedCategory;
   });
 
-  // --- بازگشت به صفحه اصلی (لوگو) ---
   const handleLogoClick = () => {
+    navigate("/");
     setView("categories");
-    setSearchTerm("");
     setSelectedGame(null);
     setSelectedCategory(null);
+    setSearchTerm("");
   };
 
   return (
     <div
-      className="min-h-screen bg-[var(--bg-main)] text-[var(--text-color)] font-sans transition-colors duration-500"
+      className="min-h-screen bg-[var(--bg-main)] text-[var(--text-color)] font-sans"
       dir="rtl"
     >
-      {/* نوار ناوبری */}
       <Navbar
         onLogoClick={handleLogoClick}
         darkMode={darkMode}
@@ -79,8 +110,8 @@ function App() {
       />
 
       <main className="container mx-auto py-8 px-4 flex flex-col lg:flex-row gap-8">
-        {/* نمایش سایدبار فقط در صفحات فروشگاه */}
-        {view !== "login" && view !== "cart" && (
+        {/* سایدبار در صفحه ادمین مخفی می‌شود */}
+        {!isAdmin && (
           <Sidebar
             searchTerm={searchTerm}
             setSearchTerm={setSearchTerm}
@@ -90,56 +121,99 @@ function App() {
             selectedCategory={selectedCategory}
             setSelectedCategory={setSelectedCategory}
             filteredGames={filteredGames}
-            setSelectedGame={setSelectedGame}
-            selectedGame={selectedGame}
+            setSelectedGame={(game) => {
+              setSelectedGame(game);
+              if (game) navigate(`/game/${game.id}`);
+            }}
           />
         )}
+
         <section
           className={`flex-1 space-y-8 ${
-            view === "login" || view === "cart"
-              ? "max-w-4xl mx-auto w-full"
-              : ""
+            isAdmin ? "max-w-5xl mx-auto w-full" : ""
           }`}
         >
-          {/* ۱. اسلایدر را از AnimatePresence خارج کردیم تا ثابت بماند و نپرد */}
-          {!searchTerm &&
-            view !== "login" &&
-            view !== "cart" &&
-            view !== "download" && <Slider />}
+          {/* اسلایدر فقط در صفحه اصلی نمایش داده می‌شود */}
+          {!isAdmin && !isGamePage && view === "categories" && !searchTerm && (
+            <Slider />
+          )}
 
-          {/* ۲. فقط محتوای متغیر را داخل انیمیشن می‌گذاریم */}
-          <AnimatePresence mode="wait">
-            {view === "cart" ? (
-              <PageTransition key="cart-page">
-                <CartPage cart={cart} setCart={setCart} setView={setView} />
-              </PageTransition>
-            ) : view === "login" ? (
-              <PageTransition key="login-page">
-                <AuthPage setView={setView} />
-              </PageTransition>
-            ) : view === "download" ? (
-              <PageTransition key="download-page">
-                <DownloadPage selectedGame={selectedGame} setView={setView} />
-              </PageTransition>
-            ) : (
-              <PageTransition
-                key={selectedGame ? selectedGame.id : "game-list"}
-              >
-                <GameDetails
-                  game={selectedGame}
-                  setView={setView}
+          <Routes>
+            {/* پنل مدیریت */}
+            <Route
+              path="/admin"
+              element={
+                <PageTransition key="admin">
+                  <AdminPanel
+                    games={games}
+                    setGames={setGames}
+                    categories={categories}
+                  />
+                </PageTransition>
+              }
+            />
+
+            {/* جزئیات هر بازی */}
+            <Route
+              path="/game/:gameId"
+              element={
+                <GameRouteWrapper
+                  games={games}
                   addToCart={addToCart}
+                  setView={setView}
+                  setSelectedGame={setSelectedGame}
                 />
-              </PageTransition>
-            )}
-          </AnimatePresence>
+              }
+            />
+
+            {/* سبد خرید */}
+            <Route
+              path="/cart"
+              element={
+                <PageTransition key="cart">
+                  <CartPage cart={cart} setCart={setCart} />
+                </PageTransition>
+              }
+            />
+
+            {/* درباره ما */}
+            <Route
+              path="/about"
+              element={
+                <PageTransition key="about">
+                  <AboutPage />
+                </PageTransition>
+              }
+            />
+
+            {/* پشتیبانی */}
+            <Route
+              path="/support"
+              element={
+                <PageTransition key="support">
+                  <SupportPage />
+                </PageTransition>
+              }
+            />
+
+            {/* صفحه اصلی (فقط لیست پیشنهادی) */}
+            <Route
+              path="/"
+              element={
+                <PageTransition key="home">
+                  <GameDetails
+                    game={null}
+                    addToCart={addToCart}
+                    featuredGames={games.slice(0, 4)}
+                    setSelectedGame={(game) => navigate(`/game/${game.id}`)}
+                  />
+                </PageTransition>
+              }
+            />
+          </Routes>
         </section>
       </main>
-
-      {/* فوتر ساده */}
-      <footer className="py-10 text-center text-gray-500 text-[10px] border-t border-white/5 mt-10 uppercase tracking-widest">
-        &copy; 2025 Steam Store Clone | Developed with React & Framer Motion
-      </footer>
+      <Footer />
     </div>
   );
 }
