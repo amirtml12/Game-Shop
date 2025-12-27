@@ -1,12 +1,6 @@
 import React, { useState, useEffect } from "react";
-import {
-  Routes,
-  Route,
-  useLocation,
-  useNavigate,
-  useParams,
-} from "react-router-dom";
-import { gamesData as initialGames } from "./data";
+import { Routes, Route, useLocation, useNavigate, useParams, Navigate } from "react-router-dom";
+import axios from "axios"; // حتما نصب کنید: npm install axios
 import { useLocalStorage } from "./hooks/useLocalStorage";
 import { AnimatePresence } from "framer-motion";
 
@@ -25,27 +19,22 @@ import AboutPage from "./Components/AboutPage";
 import SupportPage from "./Components/SupportPage";
 
 const categories = ["Action", "RPG", "Sports", "Strategy", "Adventure"];
+const API_URL = "http://localhost:5000/api"; // آدرس بک‌ند شما
 
-// --- کامپوننت کمکی برای استخراج ID از آدرس URL ---
-const GameRouteWrapper = ({ games, addToCart, setView, setSelectedGame }) => {
+// --- کامپوننت کمکی برای استخراج ID ---
+const GameRouteWrapper = ({ games, addToCart, navigate }) => {
   const { gameId } = useParams();
-  const game = games.find((g) => g.id === parseInt(gameId));
+  const game = games.find((g) => g.id === gameId || g._id === gameId);
 
-  if (!game)
-    return (
-      <div className="text-white text-center py-20 font-bold">
-        بازی مورد نظر یافت نشد.
-      </div>
-    );
+  if (!game) return <div className="text-white text-center py-20 font-bold">بازی یافت نشد.</div>;
 
   return (
-    <PageTransition key={game.id}>
+    <PageTransition key={game._id || game.id}>
       <GameDetails
         game={game}
-        setView={setView}
         addToCart={addToCart}
         featuredGames={games.slice(0, 4)}
-        setSelectedGame={setSelectedGame}
+        setSelectedGame={(g) => navigate(`/game/${g._id || g.id}`)}
       />
     </PageTransition>
   );
@@ -54,172 +43,100 @@ const GameRouteWrapper = ({ games, addToCart, setView, setSelectedGame }) => {
 function App() {
   const [darkMode, setDarkMode] = useLocalStorage("theme", true);
   const [cart, setCart] = useLocalStorage("shopping-cart", []);
-
-  const [games, setGames] = useLocalStorage("all-games", initialGames);
-  const [view, setView] = useState("categories");
+  const [user, setUser] = useLocalStorage("user", null); // وضعیت لاگین کاربر
+  
+  const [games, setGames] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState(null);
-  const [selectedGame, setSelectedGame] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
 
   const location = useLocation();
   const navigate = useNavigate();
 
-  const isAdmin = location.pathname === "/admin";
-  const isGamePage = location.pathname.startsWith("/game/");
+  // اتصال به بک‌ند برای دریافت بازی‌ها
+  useEffect(() => {
+    const fetchGames = async () => {
+      try {
+        const res = await axios.get(`${API_URL}/games`);
+        setGames(res.data);
+      } catch (err) {
+        console.error("خطا در اتصال به سرور:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchGames();
+  }, []);
 
   useEffect(() => {
-    if (!darkMode) document.documentElement.classList.add("light");
-    else document.documentElement.classList.remove("light");
+    document.documentElement.classList.toggle("light", !darkMode);
   }, [darkMode]);
 
-  useEffect(() => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }, [location.pathname, view]);
-
   const addToCart = (game) => {
-    const isExist = cart.find((item) => item.id === game.id);
-    if (!isExist) setCart([...cart, game]);
-    else alert("این بازی در سبد خرید موجود است.");
+    if (cart.find((item) => item._id === game._id)) {
+      alert("این بازی در سبد شما هست.");
+    } else {
+      setCart([...cart, game]);
+    }
   };
 
   const filteredGames = games.filter((game) => {
-    if (searchTerm)
-      return game.title.toLowerCase().includes(searchTerm.toLowerCase());
-    return game.category === selectedCategory;
+    if (searchTerm) return game.title.toLowerCase().includes(searchTerm.toLowerCase());
+    if (selectedCategory) return game.category === selectedCategory;
+    return true;
   });
 
-  const handleLogoClick = () => {
-    navigate("/");
-    setView("categories");
-    setSelectedGame(null);
-    setSelectedCategory(null);
-    setSearchTerm("");
-  };
+  if (loading) return <div className="h-screen flex items-center justify-center bg-[#0f1218] text-blue-500">در حال دریافت اطلاعات...</div>;
 
   return (
-    <div
-      className="min-h-screen bg-[var(--bg-main)] text-[var(--text-color)] font-sans"
-      dir="rtl"
-    >
-      <Navbar
-        onLogoClick={handleLogoClick}
-        darkMode={darkMode}
-        setDarkMode={setDarkMode}
-        setView={setView}
+    <div className="min-h-screen bg-[var(--bg-main)] text-[var(--text-color)] font-sans" dir="rtl">
+      <Navbar 
+        onLogoClick={() => navigate("/")} 
+        darkMode={darkMode} 
+        setDarkMode={setDarkMode} 
         cartCount={cart.length}
+        user={user}
+        onLogout={() => setUser(null)}
       />
 
       <main className="container mx-auto py-8 px-4 flex flex-col lg:flex-row gap-8">
-        {/* سایدبار در صفحه ادمین مخفی می‌شود */}
-        {!isAdmin && (
+        {location.pathname !== "/admin" && (
           <Sidebar
             searchTerm={searchTerm}
             setSearchTerm={setSearchTerm}
-            view={view}
-            setView={setView}
             categories={categories}
             selectedCategory={selectedCategory}
             setSelectedCategory={setSelectedCategory}
             filteredGames={filteredGames}
-            setSelectedGame={(game) => {
-              setSelectedGame(game);
-              if (game) navigate(`/game/${game.id}`);
-            }}
           />
         )}
 
-        <section
-          className={`flex-1 space-y-8 ${
-            isAdmin ? "max-w-5xl mx-auto w-full" : ""
-          }`}
-        >
-          {/* اسلایدر فقط در صفحه اصلی نمایش داده می‌شود */}
+        <section className={`flex-1 space-y-8 ${location.pathname === "/admin" ? "max-w-5xl mx-auto w-full" : ""}`}>
           {location.pathname === "/" && !searchTerm && <Slider />}
 
-          <Routes>
-            {/* ۱. مسیر پنل مدیریت */}
-            <Route
-              path="/admin"
-              element={
-                <PageTransition key="admin">
-                  <AdminPanel
-                    games={games}
-                    setGames={setGames}
-                    categories={categories}
-                  />
-                </PageTransition>
-              }
-            />
-            {/* ۲. مسیر جزئیات بازی */}
-            <Route
-              path="/game/:gameId"
-              element={
-                <GameRouteWrapper
-                  games={games}
-                  addToCart={addToCart}
-                  setView={setView}
-                  setSelectedGame={setSelectedGame}
-                />
-              }
-            />
-            {/* ۳. مسیرهای اختصاصی برای هر بخش (بدون نیاز به متغیر view) */}
-            <Route
-              path="/cart"
-              element={
-                <PageTransition key="cart">
-                  <CartPage cart={cart} setCart={setCart} setView={setView} />
-                </PageTransition>
-              }
-            />
-            <Route
-              path="/about"
-              element={
-                <PageTransition key="about">
-                  <AboutPage />
-                </PageTransition>
-              }
-            />
-            <Route
-              path="/support"
-              element={
-                <PageTransition key="support">
-                  <SupportPage />
-                </PageTransition>
-              }
-            />
-            <Route
-              path="/login"
-              element={
-                <PageTransition key="login">
-                  <AuthPage setView={setView} />
-                </PageTransition>
-              }
-            />
-            // در App.jsx بخش Routes
-            <Route
-              path="/download/:gameId"
-              element={
-                <PageTransition key="download">
-                  <DownloadPage games={games} />
-                </PageTransition>
-              }
-            />
-            {/* ۴. صفحه اصلی (خانه) */}
-            <Route
-              path="/"
-              element={
-                <PageTransition key="home">
-                  <GameDetails
-                    game={null}
-                    setView={setView}
-                    addToCart={addToCart}
-                    featuredGames={games.slice(0, 4)}
-                    setSelectedGame={(game) => navigate(`/game/${game.id}`)}
-                  />
-                </PageTransition>
-              }
-            />
-          </Routes>
+          <AnimatePresence mode="wait">
+            <Routes location={location} key={location.pathname}>
+              {/* مسیرهای عمومی */}
+              <Route path="/" element={<PageTransition><GameDetails game={null} featuredGames={games.slice(0, 4)} addToCart={addToCart} /></PageTransition>} />
+              <Route path="/about" element={<PageTransition><AboutPage /></PageTransition>} />
+              <Route path="/support" element={<PageTransition><SupportPage /></PageTransition>} />
+              <Route path="/cart" element={<PageTransition><CartPage cart={cart} setCart={setCart} /></PageTransition>} />
+              <Route path="/login" element={<PageTransition><AuthPage setUser={setUser} /></PageTransition>} />
+              
+              {/* مسیرهای داینامیک */}
+              <Route path="/game/:gameId" element={<GameRouteWrapper games={games} addToCart={addToCart} navigate={navigate} />} />
+              <Route path="/download/:gameId" element={<PageTransition><DownloadPage games={games} /></PageTransition>} />
+
+              {/* پنل ادمین (محافظت شده) */}
+              <Route path="/admin" element={
+                user?.role === "admin" ? (
+                  <PageTransition><AdminPanel games={games} setGames={setGames} categories={categories} /></PageTransition>
+                ) : (
+                  <Navigate to="/login" />
+                )
+              } />
+            </Routes>
+          </AnimatePresence>
         </section>
       </main>
       <Footer />
