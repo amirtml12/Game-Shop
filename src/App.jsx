@@ -134,12 +134,10 @@ function App() {
           }`}
         >
           {/* اسلایدر فقط در صفحه اصلی نمایش داده می‌شود */}
-          {!isAdmin && !isGamePage && view === "categories" && !searchTerm && (
-            <Slider />
-          )}
+          {location.pathname === "/" && !searchTerm && <Slider />}
 
           <Routes>
-            {/* پنل مدیریت */}
+            {/* ۱. مسیر پنل مدیریت */}
             <Route
               path="/admin"
               element={
@@ -152,8 +150,7 @@ function App() {
                 </PageTransition>
               }
             />
-
-            {/* جزئیات هر بازی */}
+            {/* ۲. مسیر جزئیات بازی */}
             <Route
               path="/game/:gameId"
               element={
@@ -165,18 +162,15 @@ function App() {
                 />
               }
             />
-
-            {/* سبد خرید */}
+            {/* ۳. مسیرهای اختصاصی برای هر بخش (بدون نیاز به متغیر view) */}
             <Route
               path="/cart"
               element={
                 <PageTransition key="cart">
-                  <CartPage cart={cart} setCart={setCart} />
+                  <CartPage cart={cart} setCart={setCart} setView={setView} />
                 </PageTransition>
               }
             />
-
-            {/* درباره ما */}
             <Route
               path="/about"
               element={
@@ -185,8 +179,6 @@ function App() {
                 </PageTransition>
               }
             />
-
-            {/* پشتیبانی */}
             <Route
               path="/support"
               element={
@@ -195,14 +187,31 @@ function App() {
                 </PageTransition>
               }
             />
-
-            {/* صفحه اصلی (فقط لیست پیشنهادی) */}
+            <Route
+              path="/login"
+              element={
+                <PageTransition key="login">
+                  <AuthPage setView={setView} />
+                </PageTransition>
+              }
+            />
+            // در App.jsx بخش Routes
+            <Route
+              path="/download/:gameId"
+              element={
+                <PageTransition key="download">
+                  <DownloadPage games={games} />
+                </PageTransition>
+              }
+            />
+            {/* ۴. صفحه اصلی (خانه) */}
             <Route
               path="/"
               element={
                 <PageTransition key="home">
                   <GameDetails
                     game={null}
+                    setView={setView}
                     addToCart={addToCart}
                     featuredGames={games.slice(0, 4)}
                     setSelectedGame={(game) => navigate(`/game/${game.id}`)}

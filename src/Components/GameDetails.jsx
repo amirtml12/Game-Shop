@@ -23,7 +23,7 @@ const GameDetails = ({
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
           {featuredGames.map((item) => (
-            <motion.div 
+            <motion.div
               key={item.id}
               onClick={() => {
                 setSelectedGame(item);
@@ -33,21 +33,27 @@ const GameDetails = ({
               className="relative bg-[#1a1f29] p-4 rounded-2xl border border-white/5 cursor-pointer overflow-hidden group transition-all"
             >
               <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl blur opacity-0 group-hover:opacity-20 transition duration-500"></div>
-              
+
               <div className="relative flex gap-5 items-center">
-                <img 
-                  src={item.image} 
-                  className="w-28 h-28 object-cover rounded-xl shadow-lg group-hover:rotate-2 transition-transform duration-300" 
+                <img
+                  src={item.image}
+                  className="w-28 h-28 object-cover rounded-xl shadow-lg group-hover:rotate-2 transition-transform duration-300"
                   alt={item.title}
                 />
                 <div className="flex-1">
-                  <h4 className="font-bold text-white group-hover:text-blue-400 transition">{item.title}</h4>
+                  <h4 className="font-bold text-white group-hover:text-blue-400 transition">
+                    {item.title}
+                  </h4>
                   <p className="text-xs text-gray-500 mt-2 line-clamp-2 leading-relaxed">
                     تجربه‌ای متفاوت در سبک {item.category} با گرافیک خیره‌کننده.
                   </p>
                   <div className="flex justify-between items-center mt-3">
-                    <span className="text-green-400 font-mono font-bold">{item.price}</span>
-                    <span className="text-[10px] bg-blue-500/10 text-blue-400 px-2 py-1 rounded">مشاهده جزئیات</span>
+                    <span className="text-green-400 font-mono font-bold">
+                      {item.price}
+                    </span>
+                    <span className="text-[10px] bg-blue-500/10 text-blue-400 px-2 py-1 rounded">
+                      مشاهده جزئیات
+                    </span>
                   </div>
                 </div>
               </div>
@@ -62,7 +68,7 @@ const GameDetails = ({
   return (
     <div className="space-y-8">
       {/* دکمه بازگشت سریع */}
-      <button 
+      <button
         onClick={() => navigate("/")}
         className="text-sm text-gray-400 hover:text-blue-400 transition-colors flex items-center gap-2"
       >
@@ -92,8 +98,8 @@ const GameDetails = ({
             </button>
 
             <button
-              onClick={() => setView("download")}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-bold border border-white/10 transition-all"
+              onClick={() => navigate(`/download/${game.id}`)} // رفتن به آدرس اختصاصی دانلود این بازی
+              className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-bold transition-all"
             >
               دانلود بازی
             </button>
@@ -113,10 +119,22 @@ const GameDetails = ({
             حداقل سیستم مورد نیاز
           </h3>
           <ul className="space-y-3 text-sm text-gray-300">
-            <li><span className="text-gray-500">OS:</span> {game.requirements?.minOS || "Windows 10"}</li>
-            <li><span className="text-gray-500">Processor:</span> {game.requirements?.minCPU || "Intel Core i5"}</li>
-            <li><span className="text-gray-500">Memory:</span> {game.requirements?.minRAM || "8 GB"}</li>
-            <li><span className="text-gray-500">Graphics:</span> {game.requirements?.minGPU || "GTX 1050"}</li>
+            <li>
+              <span className="text-gray-500">OS:</span>{" "}
+              {game.requirements?.minOS || "Windows 10"}
+            </li>
+            <li>
+              <span className="text-gray-500">Processor:</span>{" "}
+              {game.requirements?.minCPU || "Intel Core i5"}
+            </li>
+            <li>
+              <span className="text-gray-500">Memory:</span>{" "}
+              {game.requirements?.minRAM || "8 GB"}
+            </li>
+            <li>
+              <span className="text-gray-500">Graphics:</span>{" "}
+              {game.requirements?.minGPU || "GTX 1050"}
+            </li>
           </ul>
         </div>
 
@@ -126,10 +144,22 @@ const GameDetails = ({
             سیستم پیشنهادی
           </h3>
           <ul className="space-y-3 text-sm text-gray-300">
-            <li><span className="text-gray-500">OS:</span> {game.requirements?.recOS || "Windows 11"}</li>
-            <li><span className="text-gray-500">Processor:</span> {game.requirements?.recCPU || "Intel Core i7"}</li>
-            <li><span className="text-gray-500">Memory:</span> {game.requirements?.recRAM || "16 GB"}</li>
-            <li><span className="text-gray-500">Graphics:</span> {game.requirements?.recGPU || "RTX 3060"}</li>
+            <li>
+              <span className="text-gray-500">OS:</span>{" "}
+              {game.requirements?.recOS || "Windows 11"}
+            </li>
+            <li>
+              <span className="text-gray-500">Processor:</span>{" "}
+              {game.requirements?.recCPU || "Intel Core i7"}
+            </li>
+            <li>
+              <span className="text-gray-500">Memory:</span>{" "}
+              {game.requirements?.recRAM || "16 GB"}
+            </li>
+            <li>
+              <span className="text-gray-500">Graphics:</span>{" "}
+              {game.requirements?.recGPU || "RTX 3060"}
+            </li>
           </ul>
         </div>
       </div>
